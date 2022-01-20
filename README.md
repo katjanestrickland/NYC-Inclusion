@@ -1,2 +1,3 @@
-# NYC_Inclusion
-NYC Inclusion Study
+# NYC Inclusion Study
+
+page is published here[https://katjanewilson.github.io/NYC-Inclusion/]
