@@ -168,9 +168,186 @@ pre code {
 </div>
 
 
-<div id="r-markdown" class="section level2">
-<h2>R Markdown</h2>
-<p>This is sample</p>
+<div id="data-cleaning" class="section level2">
+<h2>Data cleaning</h2>
+<p>Build a dataset from raw NYC data, where for 1125 schools, we have enrollment, attendance, etc.</p>
+<pre class="r"><code>head(merged[,1:10])</code></pre>
+<pre><code>##      DBN                    School Name Total Enrollment Economic Need Index
+## 1 01M015      P.S. 015 Roberto Clemente              190               0.890
+## 2 01M019            P.S. 019 Asher Levy              257               0.679
+## 3 01M020           P.S. 020 Anna Silver              497               0.800
+## 4 01M034 P.S. 034 Franklin D. Roosevelt              333               0.937
+## 5 01M063      The STAR Academy - P.S.63              203               0.762
+## 6 01M064          P.S. 064 Robert Simon              245               0.882
+##   % Male % Black % White % Students with Disabilities % Poverty GT1
+## 1  0.479   0.274   0.032                        0.258     0.847   1
+## 2  0.556   0.191   0.062                        0.350     0.770   0
+## 3  0.509   0.103   0.032                        0.237     0.736   0
+## 4  0.550   0.318   0.027                        0.372     0.979   0
+## 5  0.507   0.182   0.118                        0.330     0.818   0
+## 6  0.588   0.208   0.053                        0.298     0.922   0</code></pre>
+</div>
+<div id="raw-differences" class="section level2">
+<h2>Raw differences</h2>
+<p>Between treatment and control, attendance and chronic absenteeism are statistically different (p value sig by t test for all covarites)</p>
+<pre class="r"><code>### t tests
+## Attendance is sig different
+working_data %&gt;%
+  group_by(self_contained) %&gt;%
+  summarise(mean_attendance = mean(as.numeric(AllStudents_PA)),
+            mean_chronic_absent = mean(as.numeric(AllStudents_CA)))</code></pre>
+<pre><code>## # A tibble: 2 × 3
+##   self_contained mean_attendance mean_chronic_absent
+##            &lt;dbl&gt;           &lt;dbl&gt;               &lt;dbl&gt;
+## 1              0            93.5                19.8
+## 2              1            92.2                27.6</code></pre>
+<pre class="r"><code>working_data %&gt;%
+  group_by(self_contained) %&gt;%
+  select(one_of(school_covariates)) %&gt;%
+  summarise_all(funs(mean(., na.rm=T)))</code></pre>
+<pre><code>## # A tibble: 2 × 5
+##   self_contained   ENI PercentBlack PercentSWD PercentPoverty
+##            &lt;dbl&gt; &lt;dbl&gt;        &lt;dbl&gt;      &lt;dbl&gt;          &lt;dbl&gt;
+## 1              0 0.589        0.218      0.193          0.611
+## 2              1 0.769        0.287      0.223          0.812</code></pre>
+</div>
+<div id="regression-estimates" class="section level2">
+<h2>Regression Estimates</h2>
+<p>Treatment is sig predictor of attendance and absenteeism, as are multiple covariates. Covariates are also predictors of treatment. Drives matching</p>
+<pre class="r"><code>### Predict Attendance and Absenteeism
+model &lt;- lm(AllStudents_PA ~ treatment, data = working_data)
+summary(model)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = AllStudents_PA ~ treatment, data = working_data)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -14.3808  -1.7252   0.2748   1.9748   5.9748 
+## 
+## Coefficients:
+##             Estimate Std. Error  t value Pr(&gt;|t|)    
+## (Intercept) 92.22520    0.08844 1042.753  &lt; 2e-16 ***
+## treatment    1.25564    0.19149    6.557 8.34e-11 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 2.631 on 1123 degrees of freedom
+## Multiple R-squared:  0.03688,    Adjusted R-squared:  0.03602 
+## F-statistic:    43 on 1 and 1123 DF,  p-value: 8.339e-11</code></pre>
+<pre class="r"><code>model &lt;- lm(AllStudents_CA ~ treatment , data = working_data)
+summary(model)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = AllStudents_CA ~ treatment, data = working_data)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -24.952 -10.334  -1.034   9.348  36.066 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)  27.5519     0.4223  65.250   &lt;2e-16 ***
+## treatment    -7.7177     0.9142  -8.442   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 12.56 on 1123 degrees of freedom
+## Multiple R-squared:  0.05967,    Adjusted R-squared:  0.05884 
+## F-statistic: 71.27 on 1 and 1123 DF,  p-value: &lt; 2.2e-16</code></pre>
+<pre class="r"><code>## multiple regression
+model &lt;- lm(AllStudents_CA ~ self_contained + 
+              TotalEnrollment + ENI + PercentBlack +PercentSWD +PercentPoverty +
+              factor(borough), data = working_data)
+summary(model)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = AllStudents_CA ~ self_contained + TotalEnrollment + 
+##     ENI + PercentBlack + PercentSWD + PercentPoverty + factor(borough), 
+##     data = working_data)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -25.659  -4.986  -0.075   5.033  39.624 
+## 
+## Coefficients:
+##                                Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)                  -1.036e-01  1.489e+00  -0.070 0.944532    
+## self_contained                1.884e+00  6.843e-01   2.754 0.005984 ** 
+## TotalEnrollment              -3.324e-03  8.376e-04  -3.968 7.70e-05 ***
+## ENI                           4.359e+01  3.981e+00  10.951  &lt; 2e-16 ***
+## PercentBlack                  1.662e+01  1.068e+00  15.563  &lt; 2e-16 ***
+## PercentSWD                    3.688e+01  4.501e+00   8.194 6.86e-16 ***
+## PercentPoverty               -2.036e+01  3.960e+00  -5.140 3.24e-07 ***
+## factor(borough)Brooklyn      -3.762e+00  6.832e-01  -5.506 4.56e-08 ***
+## factor(borough)Manhattan     -2.577e+00  8.307e-01  -3.103 0.001965 ** 
+## factor(borough)Queens        -2.622e+00  7.876e-01  -3.329 0.000901 ***
+## factor(borough)Staten Island  1.218e+00  1.248e+00   0.975 0.329632    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 7.85 on 1114 degrees of freedom
+## Multiple R-squared:  0.6357, Adjusted R-squared:  0.6325 
+## F-statistic: 194.4 on 10 and 1114 DF,  p-value: &lt; 2.2e-16</code></pre>
+<pre class="r"><code>model &lt;- lm(AllStudents_PA ~ self_contained + 
+              TotalEnrollment + ENI + PercentBlack +PercentSWD +PercentPoverty +
+              factor(borough), data = working_data)
+summary(model)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = AllStudents_PA ~ self_contained + TotalEnrollment + 
+##     ENI + PercentBlack + PercentSWD + PercentPoverty + factor(borough), 
+##     data = working_data)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -11.4942  -0.9667   0.0315   1.0945   5.8942 
+## 
+## Coefficients:
+##                                Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)                  97.2694442  0.3331198 291.995  &lt; 2e-16 ***
+## self_contained               -0.1206525  0.1530538  -0.788 0.430688    
+## TotalEnrollment               0.0005860  0.0001873   3.128 0.001807 ** 
+## ENI                          -8.2618704  0.8904006  -9.279  &lt; 2e-16 ***
+## PercentBlack                 -3.7057301  0.2389059 -15.511  &lt; 2e-16 ***
+## PercentSWD                   -8.3018249  1.0067581  -8.246 4.57e-16 ***
+## PercentPoverty                4.3089307  0.8858164   4.864 1.31e-06 ***
+## factor(borough)Brooklyn       0.8060872  0.1528217   5.275 1.60e-07 ***
+## factor(borough)Manhattan      0.6560432  0.1857986   3.531 0.000431 ***
+## factor(borough)Queens         0.5917690  0.1761699   3.359 0.000808 ***
+## factor(borough)Staten Island -0.2029138  0.2792294  -0.727 0.467567    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 1.756 on 1114 degrees of freedom
+## Multiple R-squared:  0.5745, Adjusted R-squared:  0.5707 
+## F-statistic: 150.4 on 10 and 1114 DF,  p-value: &lt; 2.2e-16</code></pre>
+<pre class="r"><code>## Predict treatment
+model &lt;- lm(treatment ~ TotalEnrollment + ENI + PercentBlack +PercentSWD +PercentPoverty , data = working_data)
+summary(model)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = treatment ~ TotalEnrollment + ENI + PercentBlack + 
+##     PercentSWD + PercentPoverty, data = working_data)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -0.7466 -0.2153 -0.1080  0.0951  1.0024 
+## 
+## Coefficients:
+##                   Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)      1.259e+00  5.670e-02  22.207  &lt; 2e-16 ***
+## TotalEnrollment -4.330e-04  3.494e-05 -12.394  &lt; 2e-16 ***
+## ENI              5.893e-01  1.593e-01   3.698 0.000228 ***
+## PercentBlack    -8.492e-02  4.509e-02  -1.884 0.059883 .  
+## PercentSWD      -1.227e+00  1.842e-01  -6.661 4.26e-11 ***
+## PercentPoverty  -1.205e+00  1.606e-01  -7.505 1.25e-13 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 0.3537 on 1119 degrees of freedom
+## Multiple R-squared:  0.2585, Adjusted R-squared:  0.2552 
+## F-statistic: 78.01 on 5 and 1119 DF,  p-value: &lt; 2.2e-16</code></pre>
 </div>
 
 
