@@ -50,11 +50,15 @@
 
 
 
+<div id="overview" class="section level2">
+<h2>Overview</h2>
+<p>Frequently considered metrics when evaluating schools are teacher quality, curriculum choice, and class size. A less considered factor when comparing public schools are class options, such as seperate classes for students with disabilities, or seperate classes for accelerated students. The largest school district in the country, NYC, is a playground of natural variation in these class options. Here, we identify the effect of inclusion (no seperate class option for SWD) on overall school attendance and chronic absenteeism rates. We find that there is more variability among schools in class options than one might expect, and second, a causal effect of of inclusion on attendance.</p>
+</div>
 <div id="part-1-data-overview" class="section level2">
 <h2>Part 1: Data Overview</h2>
 <div id="data-cleaning" class="section level3">
 <h3>Data cleaning</h3>
-<p>Build a dataset from raw NYC data, where for 1125 schools, we have enrollment, attendance, demographic information.</p>
+<p>Using OpenData NYC, we pull aggregate K-8 attendance records and socio-economic variables for all 1125 public schools.</p>
 <table>
 <caption>
 Sample Data Frame
@@ -171,7 +175,7 @@ P.S. 020 Anna Silver
 </div>
 <div id="raw-differences-in-covariates" class="section level3">
 <h3>Raw differences in covariates</h3>
-<p>Between treatment and control, attendance and chronic absenteeism are statistically different (p value sig by a t test for all covariates)</p>
+<p>Between treatment and control, outcome (attendance and chronic absenteeism) and socio-economic covariates are all statistically different, as assessed by a two sample t test.</p>
 <table>
 <caption>
 Outcome Differences by Treatment
@@ -286,7 +290,7 @@ Total Enrollment
 </div>
 <div id="regression-estimates" class="section level3">
 <h3>Regression Estimates</h3>
-<p>Treatment is significant predictor of absenteeism (CA) as are covariates generally associated with higher absenteeism. These same covariates are also predictive of the treatment, making them confounders.</p>
+<p>Treatment (inclusion) is a significant predictor of absenteeism (CA) as are the covariates generally associated with higher absenteeism. These same covariates are also predictive of the treatment, meaning that these covariates are confounders.</p>
 <table>
 <caption>
 Treatment and Covariates predicting Chronic Absenteeism
@@ -706,7 +710,7 @@ factor(borough)Staten Island
 </div>
 <div id="part-2-matching" class="section level2">
 <h2>Part 2: Matching</h2>
-<p>We match at a ratio of 3:1, control:treatment groups. The original sample has 885 Control and 240 Treatment. The matched sample has 418 Matched and 181 treatment. Notice improvements on all five covariates occur with matching. For the matched model, our effects are…</p>
+<p>We match at a ratio of 3:1, control:treatment groups. The original sample has 885 Control (no inclusion) schools and 240 Treatment (inclusion) schools. The matched sample has 418 Control and 181 Treatment. All covariates cross the acceptable standardized mean difference threshold, and visual diagnostics of the covariate distributions confirm the balance improvement.</p>
 <div id="assess-balance" class="section level3">
 <h3>Assess Balance</h3>
 <pre><code>#&gt; Call
@@ -865,7 +869,7 @@ treatment
 </div>
 <div id="heterogeneous-treatment-effects" class="section level3">
 <h3>Heterogeneous Treatment Effects</h3>
-<p>When we use only socioeconomic variables in the propensity score model (Percent Black, Percent SWD, Percent Poverty, ENI), and Total Enrollment in the outcome, then the treatment effect of inclusion is strongest for our low-income, high-minority schools.</p>
+<p>Using only socioeconomic variables in the propensity score model (Percent Black, Percent SWD, Percent Poverty, ENI), and adding Total Enrollment to the outcome model, we explore heterogeneous treatment effects for low-SES schools. Treatment effect of inclusion is strongest for our low-income, high-minority schools.</p>
 <pre><code>#&gt;   treatment TotalEnrollment   ENI PercentBlack PercentSWD PercentPoverty
 #&gt; 1         1             190 0.890        0.274      0.258          0.847
 #&gt; 2         0             257 0.679        0.191      0.350          0.770

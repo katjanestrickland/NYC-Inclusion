@@ -106,11 +106,15 @@ rm(list = ls())
 
 ```
 
+## Overview
+
+Frequently considered metrics when evaluating schools are teacher quality, curriculum choice, and class size. A less considered factor when comparing public schools are class options, such as seperate classes for students with disabilities, or seperate classes for accelerated students. The largest school district in the country, NYC, is a playground of natural variation in these class options. Here, we identify the effect of inclusion (no seperate class option for SWD) on overall school attendance and chronic absenteeism rates. We focus on two findings: first, class options and offerings in schools is more varied than expected, and second, inclusion positively influences overall school attendance and reduces chronic absenteeism.
+
 ## Part 1: Data Overview
 
 ### Data cleaning
 
-Build a dataset from raw NYC data, where for 1125 schools, we have enrollment, attendance, demographic information.
+Using OpenData NYC, we pull aggregate K-8 attendance records and socio-economic variables for all 1125 public schools.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 merged<- read_csv("data/full_school_data.csv")
@@ -123,7 +127,7 @@ head(merged[1:3,c(1:6,8:9)]) %>%
 
 ### Raw differences in covariates
 
-Between treatment and control, attendance and chronic absenteeism are statistically different (p value sig by a t test for all covariates)
+Between treatment and control, outcome (attendance and chronic absenteeism) and socio-economic covariates are all statistically different, as assessed by a two sample t test.
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 
@@ -179,7 +183,7 @@ working_data %>%
 ```
 ### Regression Estimates
 
-Treatment is significant predictor of absenteeism (CA) as are covariates generally associated with higher absenteeism. These same covariates are also predictive of the treatment, making them confounders.
+Treatment (inclusion) is a significant predictor of absenteeism (CA) as are the covariates generally associated with higher absenteeism. These same covariates are also predictive of the treatment, meaning that these covariates are confounders.
 
 ```{r echo=FALSE}
 
@@ -453,7 +457,7 @@ figure
 
 ## Part 2: Matching
 
-We match at a ratio of 3:1, control:treatment groups. The original sample has 885 Control and 240 Treatment. The matched sample has 418 Matched and 181 treatment. Notice improvements on all five covariates occur with matching. For the matched model, our effects are... 
+We match at a ratio of 3:1, control:treatment groups. The original sample has 885 Control (no inclusion) schools and 240 Treatment (inclusion) schools. The matched sample has 418 Control and 181 Treatment. All covariates cross the acceptable standardized mean difference threshold, and visual diagnostics of the covariate distributions confirm the balance improvement.
 
 ### Assess Balance
 
@@ -495,6 +499,8 @@ bal.plot(school_nearest, var.name = 'ENI', which = "both")
 
 ### Matched Estimates
 
+Matching yields a statistically significant treatment effect, improving our confidence in the causal effect of inclusion.
+
 ```{r echo=FALSE}
 ## estimating treatment effects
 lm(`% Chronically Absent` ~ treatment, data = nearest_matched) %>%
@@ -514,7 +520,7 @@ lm(`% Attendance` ~ treatment, data = nearest_matched) %>%
 
 ### Heterogeneous Treatment Effects
 
-When we use only socioeconomic variables in the propensity score model (Percent Black, Percent SWD, Percent Poverty, ENI), and Total Enrollment in the outcome, then the treatment effect of inclusion is strongest for our low-income, high-minority schools. 
+Using only socioeconomic variables in the propensity score model (Percent Black, Percent SWD, Percent Poverty, ENI), and adding Total Enrollment to the outcome model, we explore heterogeneous treatment effects for low-SES schools. Treatment effect of inclusion is strongest for our low-income, high-minority schools. 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 school_subclass <- matchit(treatment ~ PercentBlack + PercentSWD + PercentPoverty + ENI,
