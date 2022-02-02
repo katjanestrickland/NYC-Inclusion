@@ -181,25 +181,43 @@ working_data %>%
         digits = c(0,2,3,2,3, 3))
 
 ```
-### Regression Estimates
+### Covariates
 
-Treatment (inclusion) is a significant predictor of absenteeism (CA) as are the covariates generally associated with higher absenteeism. These same covariates are also predictive of the treatment, meaning that these covariates are confounders.
+Treatment (inclusion) is a significant predictor of absenteeism (CA), without matching. However, five covariates generally associated with higher absenteeism are predictive of both the treatment and the outcome, making them confounders.
+
+$$
+\begin{align}
+ChronicAbsenteeism = \beta_0 +\beta_1Treatment + \beta_2ENI+ 
+\beta_3PercentBlack+\beta_4PercentSWD + \\ \beta_5PercentPoverty +\beta_6PercentPoverty+ BoroughFixedEffects + \epsilon
+\end{align}
+$$
+
 
 ```{r echo=FALSE}
 
 ## multiple regression
 
-lm(AllStudents_CA ~ self_contained + 
+lm(AllStudents_CA ~ treatment + 
               TotalEnrollment + ENI + PercentBlack +PercentSWD +PercentPoverty +
               factor(borough), data = working_data) %>%
   tidy() %>%
-  kable(caption =  "Treatment and Covariates predicting Chronic Absenteeism",
+  kable(caption =  "Chronic Absenteeism ~ Treatment + Covariates",
         col.names = c("Predictor", "B", "SE", "t", "p"),
         digits = c(0,2,3,2,3))
+```
+
+
+$$
+\begin{align}
+Treatment = \beta_0 +\beta_1TotalEnrollment + \beta_2ENI+ 
+\beta_3PercentBlack+\beta_4PercentSWD + \\ \beta_5PercentPoverty + BoroughFixedEffects + \epsilon
+\end{align}
+$$
+```{r echo=FALSE}
 ## Predict treatment
 lm(treatment ~ TotalEnrollment + ENI + PercentBlack +PercentSWD +PercentPoverty + factor(borough), data = working_data) %>%
   tidy() %>%
-  kable(caption =  "Covariates predicting Treatment",
+  kable(caption =  "Treatment ~ Covariates",
         col.names = c("Predictor", "B", "SE", "t", "p"),
         digits = c(0,2,3,2,3))
 
@@ -210,7 +228,7 @@ lm(treatment ~ TotalEnrollment + ENI + PercentBlack +PercentSWD +PercentPoverty 
 
 ### Visuals
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r echo=FALSE, message=FALSE, fig.width = 6, fig.height = 5, warning=FALSE}
 ### Likelihood of the class Options by Borough
 
 likelihood_borough<- working_data %>%
@@ -233,7 +251,7 @@ ggplot(data = likelihood_borough, aes(fill = class_option, y = ratio,
   geom_bar(position = "dodge", stat = "identity")+
   ggtitle("Likelihood of Class Option by Borough") +
   theme(
-    legend.position = "none",
+    legend.position = "right",
     plot.title = element_text(size=11),
     axis.title.y = element_blank(),
     axis.text.y = element_blank(),
@@ -244,7 +262,7 @@ ggplot(data = likelihood_borough, aes(fill = class_option, y = ratio,
   ) +
   scale_fill_viridis(discrete = TRUE, alpha=0.6)  +
   scale_y_continuous(labels = scales::percent)+
-  geom_text(size = 4, position=position_dodge(width=1), vjust=-1, hjust = .4)
+  geom_text(size = 3, position=position_dodge(width=1), vjust=-1, hjust = .4)
 
 
 ### Likelihood of the Class Options by School Type
@@ -270,7 +288,7 @@ ggplot(data = likelihood_school_type, aes(fill = class_option, y = ratio,
   geom_bar(position = "dodge", stat = "identity")+
   ggtitle("Likelihood of Class Options by School Type") +
   theme(
-    legend.position = "none",
+    legend.position = "right",
     plot.title = element_text(size=11),
     axis.title.y = element_blank(),
     axis.text.y = element_blank(),
@@ -281,64 +299,64 @@ ggplot(data = likelihood_school_type, aes(fill = class_option, y = ratio,
   ) +
   scale_fill_viridis(discrete = TRUE, alpha=0.6)  +
   scale_y_continuous(labels = scales::percent)+
-  geom_text(size = 4, position=position_dodge(width=1), vjust=-1, hjust = .4)
+  geom_text(size = 3, position=position_dodge(width=1), vjust=-1, hjust = .4)
 
 ```
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE,  fig.width = 11}
+```{r echo=FALSE, message=FALSE, warning=FALSE,  fig.width = 10, fig.height = 6}
 p1<- working_data  %>%
-  ggplot(aes(x = borough, y = ENI, fill = as.factor(self_contained))) +
+  ggplot(aes(x = borough, y = ENI, fill = as.factor(treatment))) +
   geom_boxplot() +
   scale_fill_brewer(palette = "BuPu") +
   theme(
     legend.position="none",
     plot.title = element_text(size=20),
     axis.title.y = element_blank(),
-    axis.text.x = element_text(face = "bold", size = 12),
+    axis.text.x = element_text(face = "bold", size = 9),
     axis.text.y = element_text(face = "bold", size = 16),
     panel.background = element_rect(fill = 'white')
   ) +
   ggtitle("Economic Need Index") +
   xlab("")
 p2<-  working_data  %>%
-  ggplot(aes(x = borough, y = PercentPoverty, fill = as.factor(self_contained))) +
+  ggplot(aes(x = borough, y = PercentPoverty, fill = as.factor(treatment))) +
   geom_boxplot() +
   scale_fill_brewer(palette = "BuPu") +
   theme(
     legend.position="none",
     plot.title = element_text(size=20),
     axis.title.y = element_blank(),
-    axis.text.x = element_text(face = "bold", size = 12),
+    axis.text.x = element_text(face = "bold", size = 9),
     axis.text.y = element_text(face = "bold", size = 16),
     panel.background = element_rect(fill = 'white')
   ) +
   ggtitle("Percent Poverty") +
   xlab("")
 p3<-  working_data  %>%
-  ggplot(aes(x = borough, y = PercentSWD, fill = as.factor(self_contained))) +
+  ggplot(aes(x = borough, y = PercentSWD, fill = as.factor(treatment))) +
   geom_boxplot() +
  scale_fill_brewer(palette = "BuPu") +
   theme(
     legend.position="none",
     plot.title = element_text(size=20),
     axis.title.y = element_blank(),
-    axis.text.x = element_text(face = "bold", size = 12),
+    axis.text.x = element_text(face = "bold", size = 9),
     axis.text.y = element_text(face = "bold", size = 16),
     panel.background = element_rect(fill = 'white')
   ) +
   ggtitle("Percent SWD") +
   xlab("")
 p4<-  working_data  %>%
-  ggplot(aes(x = borough, y = PercentBlack, fill = as.factor(self_contained))) +
+  ggplot(aes(x = borough, y = PercentBlack, fill = as.factor(treatment))) +
   geom_boxplot() +
-   scale_fill_brewer(palette = "BuPu") +
+   scale_fill_brewer(palette = "BuPu",  labels = c("self-contained", "inclusion")) +
   theme(
     legend.position="right",
     legend.title = element_blank(),
     plot.title = element_text(size=20),
     axis.title.y = element_blank(),
-    axis.text.x = element_text(face = "bold", size = 12),
+    axis.text.x = element_text(face = "bold", size = 9),
     axis.text.y = element_text(face = "bold", size = 16),
     panel.background = element_rect(fill = 'white')
   ) +
@@ -354,7 +372,7 @@ figure
 ```
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width = 11}
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width = 10, fig.height = 6}
 ### Attendance and Absentee Rates by Borough
 library(formattable)
 att_rates_borough<- working_data %>%
@@ -380,9 +398,9 @@ p1<- ggplot(data = att_rates_borough, aes(fill = treatment, y = mean_CA,
     axis.ticks.y = element_blank(),
     axis.title.x = element_blank(),
     panel.background = element_rect(fill = 'white'),
-    axis.text.x = element_text(face = "bold", size = 12)
+    axis.text.x = element_text(face = "bold", size = 9)
   ) +
-  scale_fill_brewer(palette = "BuPu") +
+  scale_fill_brewer(palette = "BuPu", labels = c("self-contained", "inclusion")) +
   geom_text(size = 3, position=position_dodge(width=1), vjust=-1, hjust = .4)
 
 p2<- ggplot(data = att_rates_borough, aes(fill = treatment, y = mean_PA,
@@ -397,9 +415,9 @@ p2<- ggplot(data = att_rates_borough, aes(fill = treatment, y = mean_PA,
     axis.ticks.y = element_blank(),
     axis.title.x = element_blank(),
     panel.background = element_rect(fill = 'white'),
-    axis.text.x = element_text(face = "bold", size = 12)
+    axis.text.x = element_text(face = "bold", size = 9)
   ) +
-   scale_fill_brewer(palette = "BuPu") +
+   scale_fill_brewer(palette = "BuPu", labels = c("self-contained", "inclusion")) +
   geom_text(size = 3, position=position_dodge(width=1), vjust=-1, hjust = .4) +
   ylim(0,1.1)
 att_rates_school_type<- working_data %>%
@@ -426,9 +444,9 @@ p3<- ggplot(data = att_rates_school_type, aes(fill = treatment, y = ratio1,
     axis.ticks.y = element_blank(),
     axis.title.x = element_blank(),
     panel.background = element_rect(fill = 'white'),
-    axis.text.x = element_text(face = "bold", size = 12)
+    axis.text.x = element_text(face = "bold", size = 9)
   ) +
-   scale_fill_brewer(palette = "BuPu") +
+   scale_fill_brewer(palette = "BuPu", labels = c("self-contained", "inclusion")) +
   geom_text(size = 3, position=position_dodge(width=1), vjust=-1, hjust = .4)
 
 p4<- ggplot(data = att_rates_school_type, aes(fill = treatment, y = mean_PA,
@@ -443,9 +461,9 @@ p4<- ggplot(data = att_rates_school_type, aes(fill = treatment, y = mean_PA,
     axis.ticks.y = element_blank(),
     axis.title.x = element_blank(),
     panel.background = element_rect(fill = 'white'),
-    axis.text.x = element_text(face = "bold", size = 12)
+    axis.text.x = element_text(face = "bold", size = 9)
   ) +
-  scale_fill_brewer(palette = "BuPu") +
+  scale_fill_brewer(palette = "BuPu", labels = c("self-contained", "inclusion")) +
   geom_text(size = 3, position=position_dodge(width=1), vjust=-1, hjust = .4)+
   ylim(0,1.1)
 
@@ -499,19 +517,36 @@ bal.plot(school_nearest, var.name = 'ENI', which = "both")
 
 ### Matched Estimates
 
-Matching yields a statistically significant treatment effect, improving our confidence in the causal effect of inclusion.
+Matching yields a statistically significant treatment effect for both absenteeism and attendance, improving our confidence in the causal effect of inclusion on overall school attendance rates.
+
+
+$$
+\begin{align}
+ChronicAbsenteeism = \beta_0 +\beta_1Treatment + \epsilon
+\end{align}
+$$
 
 ```{r echo=FALSE}
 ## estimating treatment effects
 lm(`% Chronically Absent` ~ treatment, data = nearest_matched) %>%
   tidy() %>%
-  kable(caption =  "Treatment and Covariates predicting Chronic Absenteeism",
+  kable(caption =  "Causal Effect using Matched Data",
         col.names = c("Predictor", "B", "SE", "t", "p"),
         digits = c(0,2,3,2,3))
+
+```
+
+
+$$
+\begin{align}
+PercentAttendance= \beta_0 +\beta_1Treatment + \epsilon
+\end{align}
+$$
+```{r echo=FALSE}
 ## Predict treatment
 lm(`% Attendance` ~ treatment, data = nearest_matched) %>%
   tidy() %>%
-  kable(caption =  "Treatment and Covariates predicting Chronic Absenteeism",
+  kable(caption =  "Causal Effect using Matched Data",
         col.names = c("Predictor", "B", "SE", "t", "p"),
         digits = c(0,2,3,2,3))
 
