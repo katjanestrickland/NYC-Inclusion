@@ -162,7 +162,7 @@ with(working_data, t.test(PercentPoverty ~ self_contained))
 ### t tests
 ## Attendance is sig different
 working_data %>%
-  group_by(self_contained) %>%
+  group_by(treatment) %>%
   summarise(mean_attendance = mean(as.numeric(AllStudents_PA)),
             mean_chronic_absent = mean(as.numeric(AllStudents_CA))) %>%
   kable(caption = "Outcome Differences by Treatment",
@@ -172,7 +172,7 @@ working_data %>%
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 working_data %>%
-  group_by(self_contained) %>%
+  group_by(treatment) %>%
   select(one_of(school_covariates)) %>%
   summarise_all(funs(mean(., na.rm=T)))%>%
   kable(caption = "Covariate Differences by Treatment",
